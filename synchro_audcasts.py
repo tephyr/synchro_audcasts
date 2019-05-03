@@ -7,12 +7,10 @@
 Purpose: Synchronize the audcast directory on a computer with an audio player
 """
 
-from __future__ import print_function
-
 import os
 import logging
-from optparse import OptionParser
-from unipath import Path, FILES_NO_LINKS
+import argparse
+# from unipath import Path, FILES_NO_LINKS
 
 
 class Synchronizer(object):
@@ -198,38 +196,37 @@ def _path_validator(path_to_check, warning_message):
 
 def run():
     """run helper; sets up class & runs it"""
-    usage = "usage: %prog [options]"
-    parser = OptionParser(usage)
-    parser.add_option('--host',
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--host',
                       dest='host',
                       help='host path')
-    parser.add_option('--host-archive',
+    parser.add_argument('--host-archive',
                       dest='host_archive',
                       help="full path to host's archive")
-    parser.add_option('--player-mount',
+    parser.add_argument('--player-mount',
                       dest='player_mount',
                       help="full path to player's mount point")
-    parser.add_option('--player-path',
+    parser.add_argument('--player-path',
                       dest='player_path',
                       help="full path to player's storage directory")
-    parser.add_option('--player-archive',
+    parser.add_argument('--player-archive',
                       dest='player_archive',
                       help="full path to player's archive directory")
-    parser.add_option('--player-delete',
+    parser.add_argument('--player-delete',
                       dest='player_delete',
                       help="full path to player's delete directory")
-    parser.add_option("-d", "--debug", 
+    parser.add_argument("-d", "--debug", 
                       dest="debug",
                       action="store_true",
                       help="debug mode (NO filesystem changes)")
-    parser.add_option("-v", "--verbose",
+    parser.add_argument("-v", "--verbose",
                       action="store_true", dest="verbose")
-    (options, args) = parser.parse_args()
+    args = parser.parse_args()
 
-    synchro = Synchronizer(options.host, options.host_archive, 
-                           options.player_mount, options.player_path, 
-                           options.player_archive, options.player_delete,)
-    synchro.run(options.debug)
+    synchro = Synchronizer(args.host, args.host_archive, 
+                           args.player_mount, args.player_path, 
+                           args.player_archive, args.player_delete,)
+    synchro.run(args.debug)
 
 if __name__ == '__main__':
     run()

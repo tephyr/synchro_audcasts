@@ -11,10 +11,10 @@ On your device, using a directory structure like this:
 
 - <main>
 
-  - archive
-  - delete
+  - /archive
+  - /delete
 
-  You can store the files you are ready to discard or archive, and synchronize with your main computer at any time.
+  You can store the files you are ready to discard or archive in the respective directories, and synchronize with your main computer at any time.
 
 This utility will ensure there is enough space on your device before downloading any new files.
 
@@ -24,4 +24,6 @@ Requirements
 
 Usage
 +++++
-- TBD
+See the built-in help::
+
+    python synchro_audcasts.py --help

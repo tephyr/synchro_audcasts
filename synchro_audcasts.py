@@ -8,9 +8,10 @@ Purpose: Synchronize the audcast directory on a computer with an audio player
 """
 
 import os
+import shutil
 import logging
 import argparse
-# from unipath import Path, FILES_NO_LINKS
+from pathlib import Path
 
 
 class Synchronizer(object):
@@ -44,48 +45,48 @@ class Synchronizer(object):
         Return: t/f"""
         logging.debug('checking that all paths exists')
         # host exists?
-        self._path_host = Path(self.hostpath).expand()
+        self._path_host = Path(self.hostpath).expanduser()
         assert isinstance(self._path_host, Path)
         if not _path_validator(self._path_host,
                                'Host path (%s) does not exist'):
             return False
 
         # host archive exists?
-        self._path_host_archive = Path(self.hostarchive).expand()
+        self._path_host_archive = Path(self.hostarchive).expanduser()
         assert isinstance(self._path_host_archive, Path)
         if not _path_validator(self._path_host_archive,
                                'Host archive path (%s) does not exist'):
             return False
         
         # player mount exists?
-        self._path_playermount = Path(self.playermount).expand()
+        self._path_playermount = Path(self.playermount).expanduser()
         assert isinstance(self._path_playermount, Path)
         if not _path_validator(self._path_playermount,
                                'Target mount path (%s) does not exist'):
             return False
         
         # player mount is mounted?
-        if not self._path_playermount.ismount():
+        if not os.path.ismount(self._path_playermount):
             logging.warn('Target mount path (%s) is not mounted', 
                          self._path_playermount.absolute())
             return False
         
         # player path exists?
-        self._path_playerpath = Path(self.playerpath).expand()
+        self._path_playerpath = Path(self.playerpath).expanduser()
         assert isinstance(self._path_playerpath, Path)
         if not _path_validator(self._path_playerpath,
                                'Target path (%s) does not exist'):
             return False
 
         # player archive path exists?
-        self._path_playerpath_archive = Path(self.playerpatharchive).expand()
+        self._path_playerpath_archive = Path(self.playerpatharchive).expanduser()
         assert isinstance(self._path_playerpath_archive, Path)
         if not _path_validator(self._path_playerpath_archive,
                                'Player archive path (%s) does not exist'):
             return False
         
         # player delete path exists?
-        self._path_playerpath_delete = Path(self.playerpathdelete).expand()
+        self._path_playerpath_delete = Path(self.playerpathdelete).expanduser()
         assert isinstance(self._path_playerpath_delete, Path)
         if not _path_validator(self._path_playerpath_delete,
                                'Player delete path (%s) does not exist'):
@@ -112,8 +113,9 @@ class Synchronizer(object):
         count_copied_files = 0
         
         # for all files in playerpatharchive, move to host
-        for p in self._path_playerpath_archive.listdir(filter=FILES_NO_LINKS):
-            #assert isinstance(p, Path)
+        for p in self._path_playerpath_archive.iterdir():
+            if not (p.is_file() and not p.is_symlink()):
+                continue
             # is this in host? if so, move
             host_archive_candidate = Path(self._path_host, 
                                           p.name)
@@ -123,31 +125,35 @@ class Synchronizer(object):
                 print('ARCHIVE %s' % p.name)
                 if host_archive_candidate.exists():
                     # move on host; remove from player
-                    host_archive_candidate.move(self._path_host_archive)
-                    p.remove()
+                    shutil.move(str(host_archive_candidate), str(self._path_host_archive))
+                    p.unlink()
                 else:
                     # player has an archived file that doesn't exist on host
-                    p.move(self._path_host_archive)
+                    shutil.move(str(p), str(self._path_host_archive))
                     
             count_archived_files += 1
         
         # for all files in playerpath/delete, delete from host
         path_player_delete = Path(self._path_playerpath, 'delete')
-        for p in path_player_delete.listdir(filter=FILES_NO_LINKS):
+        for p in path_player_delete.iterdir():
+            if not (p.is_file() and not p.is_symlink()):
+                continue
             path_host_to_remove = Path(self._path_host, p.name)
             if path_host_to_remove.exists():
                 logging.debug('Will remove %s', 
                               path_host_to_remove.absolute())
                 if not debug:
-                    path_host_to_remove.remove()
+                    path_host_to_remove.unlink()
                 
             if not debug:
                 print('REMOVE %s' % p)
-                p.remove()
+                p.unlink()
             count_deleted_files += 1
             
         # for all files in host, verify they exist in target
-        for p in self._path_host.listdir(filter=FILES_NO_LINKS):
+        for p in self._path_host.iterdir():
+            if not (p.is_file() and not p.is_symlink()):
+                continue
             path_player = Path(self._path_playerpath, p.name)
             if not path_player.exists():
                 if not _space_checker(self._path_playermount,
@@ -159,7 +165,7 @@ class Synchronizer(object):
                 # check for space
                 if not debug:
                     print("COPY %s" % p.name)
-                    p.copy(path_player)
+                    shutil.copy(str(p), str(path_player))
                 count_copied_files += 1
         
         logging.info('Archived %s files, removed %s files, copied %s files', 
@@ -180,7 +186,7 @@ def _space_checker(mount_to_check, file_to_check):
     available_blocks = statinfo.f_bavail
     bytes_available = block_size * available_blocks
     
-    file_size = Path(file_to_check).size()
+    file_size = Path(file_to_check).stat().st_size
     
     return bytes_available >= file_size
     

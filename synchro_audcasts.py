@@ -67,7 +67,7 @@ class Synchronizer(object):
         
         # player mount is mounted?
         if not os.path.ismount(self._path_playermount):
-            logging.warn('Target mount path (%s) is not mounted', 
+            logging.warning('Target mount path (%s) is not mounted',
                          self._path_playermount.absolute())
             return False
         
@@ -104,7 +104,7 @@ class Synchronizer(object):
         
         # validate all paths
         if not self.validate_paths():
-            logging.warn('Path validation failed; aborting')
+            logging.warning('Path validation failed; aborting')
             return False
         
         # prep counts
@@ -158,7 +158,7 @@ class Synchronizer(object):
             if not path_player.exists():
                 if not _space_checker(self._path_playermount,
                                       p):
-                    logging.warn('Not enough space for %s; aborting',
+                    logging.warning('Not enough space for %s; aborting',
                                  p.absolute())
                     break
                 logging.debug("Will copy %s", p.name)
@@ -195,7 +195,7 @@ def _path_validator(path_to_check, warning_message):
     """checks for existing Path()
     Returns t/f"""
     if not path_to_check.exists():
-        logging.warn(warning_message, path_to_check.absolute())
+        logging.warning(warning_message, path_to_check.absolute())
         return False
     return True
     
